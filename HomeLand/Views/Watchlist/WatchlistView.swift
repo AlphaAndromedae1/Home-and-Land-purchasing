@@ -30,6 +30,7 @@ enum WatchSort: String, CaseIterable, Identifiable {
     case newest
     case priceLow
     case priceHigh
+    case score
     case name
 
     var id: String { rawValue }
@@ -40,6 +41,7 @@ enum WatchSort: String, CaseIterable, Identifiable {
         case .newest: return "Newest"
         case .priceLow: return "Price: low to high"
         case .priceHigh: return "Price: high to low"
+        case .score: return "Deal score"
         case .name: return "Name"
         }
     }
@@ -59,6 +61,8 @@ enum WatchSort: String, CaseIterable, Identifiable {
             return (a.askingPrice ?? .greatestFiniteMagnitude) < (b.askingPrice ?? .greatestFiniteMagnitude)
         case .priceHigh:
             return (a.askingPrice ?? -1) > (b.askingPrice ?? -1)
+        case .score:
+            return (DealRater.rate(a)?.score ?? -1) > (DealRater.rate(b)?.score ?? -1)
         case .name:
             return a.displayTitle.localizedCaseInsensitiveCompare(b.displayTitle) == .orderedAscending
         }
@@ -264,14 +268,21 @@ struct PropertyRow: View {
                 }
             }
             HStack(spacing: 6) {
+                if let rating = DealRater.rate(property) {
+                    TagBadge(text: "\(rating.score) \(rating.grade.shortName)", color: rating.grade.color, symbol: "star.fill")
+                }
                 TagBadge(text: property.saleType.name, color: property.saleType.color, symbol: property.saleType.symbol)
                 TagBadge(text: property.status.name, color: property.status.color)
             }
             HStack(spacing: 12) {
                 if !property.municipality.trimmed.isEmpty {
                     Label(property.municipality, systemImage: "mappin.and.ellipse")
+                        .lineLimit(1)
                 }
                 Label("\(progress.done)/\(progress.total) checks", systemImage: "checklist")
+                if !property.attachments.isEmpty {
+                    Label("\(property.attachments.count)", systemImage: "paperclip")
+                }
             }
             .font(.caption)
             .foregroundStyle(.secondary)

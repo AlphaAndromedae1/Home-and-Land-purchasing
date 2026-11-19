@@ -78,6 +78,8 @@ final class PropertyStoreTests: XCTestCase {
         XCTAssertEqual(store.properties.first?.saleType, .taxSale)
         XCTAssertEqual(store.properties.first?.kind, .house)
         XCTAssertEqual(store.properties.first?.status, .watching)
+        XCTAssertEqual(store.properties.first?.contacts, [])
+        XCTAssertEqual(store.properties.first?.analysis, DealAnalysis())
         XCTAssertNil(store.lastError)
     }
 
@@ -107,6 +109,90 @@ final class PropertyStoreTests: XCTestCase {
         XCTAssertEqual(store.properties.count, 2)
         XCTAssertEqual(store.property(id: existing.id)?.title, "New title")
         XCTAssertNotNil(store.property(id: added.id))
+    }
+
+    func testContactsAndAnalysisPersist() {
+        let store = makeStore()
+        let property = Property(title: "123 Main St")
+        store.upsert(property)
+        store.update(property.id) { item in
+            item.contacts.append(PropertyContact(role: .lawyer, name: "Pat", phone: "(416) 555-0199"))
+            item.analysis.estimatedValue = 500_000
+            item.analysis.setRating(4, for: .location)
+            item.analysis.setRisk(.occupants, true)
+        }
+
+        let reloaded = makeStore().property(id: property.id)
+        XCTAssertEqual(reloaded?.contacts.first?.name, "Pat")
+        XCTAssertEqual(reloaded?.analysis.estimatedValue, 500_000)
+        XCTAssertEqual(reloaded?.analysis.rating(for: .location), 4)
+        XCTAssertEqual(reloaded?.analysis.hasRisk(.occupants), true)
+    }
+
+    func testAttachmentsAreSavedAndRemoved() throws {
+        let store = makeStore()
+        let property = Property(title: "With files")
+        store.upsert(property)
+
+        let attachment = try store.addAttachment(data: Data("hello".utf8), name: "Notes.txt", fileExtension: "TXT", kind: .document, to: property.id)
+        let url = store.fileURL(for: attachment, in: property.id)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertEqual(url.pathExtension, "txt")
+        XCTAssertEqual(makeStore().property(id: property.id)?.attachments.count, 1)
+
+        store.removeAttachment(attachment.id, from: property.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertEqual(store.property(id: property.id)?.attachments.count, 0)
+    }
+
+    func testDeletingPropertyRemovesItsFiles() throws {
+        let store = makeStore()
+        let property = Property(title: "Gone soon")
+        store.upsert(property)
+        try store.addAttachment(data: Data([1, 2, 3]), name: "Photo", fileExtension: "jpg", kind: .photo, to: property.id)
+        let folder = store.attachmentsFolder(for: property.id)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: folder.path))
+
+        store.delete(ids: [property.id])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+    }
+
+    func testImportedImagesAreFiledAsPhotos() throws {
+        let store = makeStore()
+        let property = Property(title: "Imports")
+        store.upsert(property)
+        let png = directory.appendingPathComponent("front.png")
+        let pdf = directory.appendingPathComponent("tender.pdf")
+        try Data([0]).write(to: png)
+        try Data([0]).write(to: pdf)
+
+        XCTAssertEqual(try store.importAttachment(from: png, to: property.id).kind, .photo)
+        let document = try store.importAttachment(from: pdf, to: property.id)
+        XCTAssertEqual(document.kind, .document)
+        XCTAssertEqual(document.name, "tender.pdf")
+    }
+
+    func testAddingAttachmentToMissingPropertyThrows() {
+        let store = makeStore()
+        XCTAssertThrowsError(try store.addAttachment(data: Data(), name: "x", fileExtension: "txt", kind: .document, to: UUID()))
+    }
+
+    func testImportKeepsAttachmentsStoredOnThisDevice() throws {
+        let store = makeStore()
+        var property = Property(title: "Has a photo")
+        store.upsert(property)
+        try store.addAttachment(data: Data([1]), name: "Photo", fileExtension: "jpg", kind: .photo, to: property.id)
+
+        property.title = "Renamed elsewhere"
+        property.attachments = [Attachment(kind: .photo, fileName: "missing.jpg", name: "Not on this phone")]
+        property.dateUpdated = Date().addingTimeInterval(3_600)
+        let backupURL = directory.appendingPathComponent("backup.json")
+        try PropertyStore.encoder.encode([property]).write(to: backupURL)
+
+        try store.importBackup(from: backupURL)
+        let merged = store.property(id: property.id)
+        XCTAssertEqual(merged?.title, "Renamed elsewhere")
+        XCTAssertEqual(merged?.attachments.map(\.name), ["Photo"])
     }
 
     func testExportRoundTrips() throws {

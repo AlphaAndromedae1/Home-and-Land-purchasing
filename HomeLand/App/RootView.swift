@@ -8,6 +8,7 @@ struct IdentifiedURL: Identifiable {
 
 enum SettingsKeys {
     static let openLinksInSafari = "settings.openLinksInSafari"
+    static let remindersEnabled = "settings.remindersEnabled"
 }
 
 struct RootView: View {
@@ -15,7 +16,9 @@ struct RootView: View {
         case find, watchlist, guide, tools
     }
 
+    @EnvironmentObject private var store: PropertyStore
     @AppStorage(SettingsKeys.openLinksInSafari) private var openLinksInSafari = false
+    @AppStorage(SettingsKeys.remindersEnabled) private var remindersEnabled = true
     @State private var selectedTab: AppTab = .find
     @State private var browserPage: IdentifiedURL?
 
@@ -42,6 +45,13 @@ struct RootView: View {
         .sheet(item: $browserPage) { page in
             SafariView(url: page.url)
                 .ignoresSafeArea()
+        }
+        // Keep deadline notifications in step with the watchlist.
+        .onReceive(store.$properties) { properties in
+            ReminderScheduler.shared.sync(properties, enabled: remindersEnabled)
+        }
+        .onChange(of: remindersEnabled) { enabled in
+            ReminderScheduler.shared.sync(store.properties, enabled: enabled)
         }
     }
 

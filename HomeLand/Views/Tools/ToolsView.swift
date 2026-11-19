@@ -2,11 +2,22 @@ import SwiftUI
 
 struct ToolsView: View {
     @AppStorage(SettingsKeys.openLinksInSafari) private var openLinksInSafari = false
+    @AppStorage(SettingsKeys.remindersEnabled) private var remindersEnabled = true
 
     var body: some View {
         NavigationStack {
             List {
                 Section("Calculators") {
+                    NavigationLink {
+                        MaxOfferToolView()
+                    } label: {
+                        Label("Maximum offer", systemImage: "gauge")
+                    }
+                    NavigationLink {
+                        MortgageCalculatorView()
+                    } label: {
+                        Label("Mortgage payment", systemImage: "house.circle")
+                    }
                     NavigationLink {
                         LandTransferTaxView()
                     } label: {
@@ -26,11 +37,12 @@ struct ToolsView: View {
                     }
                 }
                 Section {
+                    Toggle("Deadline reminders", isOn: $remindersEnabled)
                     Toggle("Open links in the Safari app", isOn: $openLinksInSafari)
                 } header: {
                     Text("Settings")
                 } footer: {
-                    Text("When this is off, web pages open inside the app.")
+                    Text("Reminders arrive at 9 a.m. 7, 3 and 1 days before an offer or tender deadline, and 2 hours before. When the Safari setting is off, web pages open inside the app.")
                 }
                 Section {
                     InfoRow(label: "Version", value: Bundle.main.appVersion)
@@ -46,6 +58,78 @@ struct ToolsView: View {
             }
             .navigationTitle("Tools")
         }
+    }
+}
+
+struct MaxOfferToolView: View {
+    @State private var analysis = DealAnalysis()
+    @State private var askingPrice: Double?
+    @State private var isHome = true
+    @State private var inToronto = false
+
+    private var inputs: MaxOffer.Inputs? {
+        MaxOffer.inputs(analysis: analysis, isHome: isHome, inToronto: inToronto)
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                NumberField(title: "Value after repairs", value: $analysis.estimatedValue, placeholder: "Required")
+                NumberField(title: "Asking price", value: $askingPrice, placeholder: "Optional")
+                NumberField(title: "Renovation & repairs", value: $analysis.renovationCost, placeholder: "0")
+                NumberField(title: "Legal & closing", value: $analysis.closingCosts, placeholder: "2500")
+                Toggle("Home with 1–2 single-family residences", isOn: $isHome)
+                Toggle("In the City of Toronto", isOn: $inToronto)
+            } header: {
+                Text("Property")
+            } footer: {
+                Text("To save these numbers with a property, open it in your Watchlist and tap “Rate this deal & work out a max offer”.")
+            }
+            MaxOfferSections(analysis: $analysis, inputs: inputs, askingPrice: askingPrice)
+        }
+        .navigationTitle("Maximum offer")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct MortgageCalculatorView: View {
+    @State private var price: Double?
+    @State private var downPaymentPercent = 20.0
+    @State private var interestRate = 5.0
+    @State private var amortizationYears = 25.0
+
+    private var loan: Double {
+        (price ?? 0) * (1 - min(max(downPaymentPercent, 0), 100) / 100)
+    }
+
+    private var monthly: Double {
+        Mortgage.monthlyPayment(principal: loan, annualPercent: interestRate, years: amortizationYears)
+    }
+
+    var body: some View {
+        Form {
+            Section("Mortgage") {
+                NumberField(title: "Purchase price", value: $price, placeholder: "Required")
+                NumberField(title: "Down payment", value: $downPaymentPercent.optional(), suffix: "%")
+                NumberField(title: "Interest rate", value: $interestRate.optional(), suffix: "%")
+                NumberField(title: "Amortization", value: $amortizationYears.optional(fallback: 25), suffix: "yrs")
+            }
+            Section {
+                AmountRow(label: "Monthly payment", amount: monthly, emphasized: true)
+                AmountRow(label: "Every two weeks", amount: monthly * 12 / 26)
+                AmountRow(label: "Down payment", amount: (price ?? 0) - loan)
+                AmountRow(label: "Mortgage amount", amount: loan)
+                AmountRow(label: "Interest in the first year", amount: Mortgage.interestPaid(
+                    principal: loan, annualPercent: interestRate, years: amortizationYears, months: 12))
+                AmountRow(label: "Interest over the whole term", amount: max(monthly * amortizationYears * 12 - loan, 0))
+            } header: {
+                Text("Payments")
+            } footer: {
+                Text("Uses semi-annual compounding, like Canadian fixed-rate mortgages. Under 20% down needs mortgage default insurance, which isn't included. Vacant land usually needs 25–50% down.")
+            }
+        }
+        .navigationTitle("Mortgage payment")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

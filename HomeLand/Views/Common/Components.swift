@@ -165,6 +165,147 @@ struct Callout: View {
     }
 }
 
+/// A number entry row that edits an optional Double. Accepts "450000", "$450,000" or "450k".
+struct NumberField: View {
+    let title: String
+    @Binding var value: Double?
+    var placeholder: String = ""
+    var suffix: String? = nil
+
+    @State private var text = ""
+    @State private var didLoad = false
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer(minLength: 12)
+            TextField(placeholder, text: $text)
+                .keyboardType(.numbersAndPunctuation)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 140)
+            if let suffix {
+                Text(suffix)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .onAppear {
+            guard !didLoad else { return }
+            didLoad = true
+            text = MoneyParser.editingText(for: value)
+        }
+        .onChange(of: text) { newText in
+            let parsed = MoneyParser.parse(newText)
+            if parsed != value {
+                value = parsed
+            }
+        }
+    }
+}
+
+extension Binding where Value == Double {
+    /// Lets `NumberField` edit a non-optional number; clearing the field sets `fallback`.
+    func optional(fallback: Double = 0) -> Binding<Double?> {
+        Binding<Double?>(
+            get: { self.wrappedValue },
+            set: { self.wrappedValue = $0 ?? fallback }
+        )
+    }
+}
+
+/// Five tappable stars. Tapping the current rating clears it.
+struct StarRatingPicker: View {
+    let title: String
+    let detail: String
+    @Binding var rating: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                Spacer(minLength: 8)
+                HStack(spacing: 6) {
+                    ForEach(1...5, id: \.self) { star in
+                        Button {
+                            rating = rating == star ? 0 : star
+                        } label: {
+                            Image(systemName: star <= rating ? "star.fill" : "star")
+                                .foregroundStyle(star <= rating ? Color.orange : Color.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("\(star) of 5 stars")
+                    }
+                }
+            }
+            Text(detail)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// Read-only stars.
+struct StarsView: View {
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(1...5, id: \.self) { star in
+                Image(systemName: star <= count ? "star.fill" : "star")
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.orange)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(count) out of 5 stars")
+    }
+}
+
+/// A circular score out of 100.
+struct ScoreRing: View {
+    let score: Int
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.2), lineWidth: 7)
+            Circle()
+                .trim(from: 0, to: CGFloat(min(max(score, 0), 100)) / 100)
+                .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Text("\(score)")
+                .font(.title3.weight(.bold))
+                .monospacedDigit()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Score \(score) out of 100")
+    }
+}
+
+/// One part of a score, as a labelled bar.
+struct ScoreBar: View {
+    let label: String
+    let points: Double
+    let maximum: Double
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(label)
+                Spacer()
+                Text("\(Int(points.rounded())) / \(Int(maximum))")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+            ProgressView(value: min(max(points, 0), maximum), total: maximum)
+                .tint(color)
+        }
+    }
+}
+
 /// Days left until a deadline, coloured by urgency.
 struct DeadlineLabel: View {
     let date: Date

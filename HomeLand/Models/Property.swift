@@ -21,6 +21,9 @@ struct Property: Identifiable, Codable, Hashable {
     var notes: String
     /// IDs of finished checklist items (see `Checklist`).
     var completedChecks: Set<String>
+    var contacts: [PropertyContact]
+    var attachments: [Attachment]
+    var analysis: DealAnalysis
     var dateAdded: Date
     var dateUpdated: Date
 
@@ -40,6 +43,9 @@ struct Property: Identifiable, Codable, Hashable {
         deadline: Date? = nil,
         notes: String = "",
         completedChecks: Set<String> = [],
+        contacts: [PropertyContact] = [],
+        attachments: [Attachment] = [],
+        analysis: DealAnalysis = DealAnalysis(),
         dateAdded: Date = Date(),
         dateUpdated: Date = Date()
     ) {
@@ -58,13 +64,17 @@ struct Property: Identifiable, Codable, Hashable {
         self.deadline = deadline
         self.notes = notes
         self.completedChecks = completedChecks
+        self.contacts = contacts
+        self.attachments = attachments
+        self.analysis = analysis
         self.dateAdded = dateAdded
         self.dateUpdated = dateUpdated
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, title, municipality, region, saleType, kind, status, askingPrice, maxPrice
-        case lotSize, listingURL, mlsNumber, deadline, notes, completedChecks, dateAdded, dateUpdated
+        case lotSize, listingURL, mlsNumber, deadline, notes, completedChecks
+        case contacts, attachments, analysis, dateAdded, dateUpdated
     }
 
     /// Decodes leniently so older, newer or hand-edited backups still load.
@@ -85,6 +95,9 @@ struct Property: Identifiable, Codable, Hashable {
         deadline = try? c.decodeIfPresent(Date.self, forKey: .deadline)
         notes = (try? c.decodeIfPresent(String.self, forKey: .notes)) ?? ""
         completedChecks = (try? c.decodeIfPresent(Set<String>.self, forKey: .completedChecks)) ?? []
+        contacts = (try? c.decodeIfPresent([PropertyContact].self, forKey: .contacts)) ?? []
+        attachments = (try? c.decodeIfPresent([Attachment].self, forKey: .attachments)) ?? []
+        analysis = (try? c.decodeIfPresent(DealAnalysis.self, forKey: .analysis)) ?? DealAnalysis()
         dateAdded = (try? c.decodeIfPresent(Date.self, forKey: .dateAdded)) ?? Date()
         dateUpdated = (try? c.decodeIfPresent(Date.self, forKey: .dateUpdated)) ?? dateAdded
     }
@@ -128,8 +141,9 @@ extension Property {
     }
 
     func matches(_ query: String) -> Bool {
-        [title, municipality, notes, mlsNumber, lotSize, region.name, saleType.name, kind.name]
-            .contains { $0.localizedCaseInsensitiveContains(query) }
+        let fields = [title, municipality, notes, mlsNumber, lotSize, region.name, saleType.name, kind.name]
+            + contacts.flatMap { [$0.name, $0.company] }
+        return fields.contains { $0.localizedCaseInsensitiveContains(query) }
     }
 }
 

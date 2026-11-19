@@ -27,6 +27,12 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
+        # Lets the Files app see the app's Documents folder (watchlist, photos, documents).
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        NSCameraUsageDescription: "Take photos of properties for your watchlist."
+        NSCalendarsUsageDescription: "Add offer and tender deadlines to your calendar."
+        NSCalendarsWriteOnlyAccessUsageDescription: "Add offer and tender deadlines to your calendar."
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

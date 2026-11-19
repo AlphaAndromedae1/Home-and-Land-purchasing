@@ -1,4 +1,13 @@
 import Foundation
+import UniformTypeIdentifiers
+
+enum StoreError: LocalizedError {
+    case propertyNotFound
+
+    var errorDescription: String? {
+        "That property no longer exists."
+    }
+}
 
 /// Keeps the watchlist in memory and saves it as JSON in the app's Documents folder.
 final class PropertyStore: ObservableObject {
@@ -53,24 +62,84 @@ final class PropertyStore: ObservableObject {
     func delete(ids: Set<UUID>) {
         properties.removeAll { ids.contains($0.id) }
         save()
+        for id in ids {
+            try? FileManager.default.removeItem(at: attachmentsFolder(for: id))
+        }
+    }
+
+    /// Changes one property in place and saves.
+    func update(_ id: UUID, _ change: (inout Property) -> Void) {
+        guard let index = properties.firstIndex(where: { $0.id == id }) else { return }
+        change(&properties[index])
+        properties[index].dateUpdated = Date()
+        save()
     }
 
     func setStatus(_ status: WatchStatus, for id: UUID) {
-        guard let index = properties.firstIndex(where: { $0.id == id }) else { return }
-        properties[index].status = status
-        properties[index].dateUpdated = Date()
-        save()
+        update(id) { $0.status = status }
     }
 
     func toggleCheck(_ itemID: String, for id: UUID) {
-        guard let index = properties.firstIndex(where: { $0.id == id }) else { return }
-        if properties[index].completedChecks.contains(itemID) {
-            properties[index].completedChecks.remove(itemID)
-        } else {
-            properties[index].completedChecks.insert(itemID)
+        update(id) { property in
+            if property.completedChecks.contains(itemID) {
+                property.completedChecks.remove(itemID)
+            } else {
+                property.completedChecks.insert(itemID)
+            }
         }
-        properties[index].dateUpdated = Date()
-        save()
+    }
+
+    // MARK: - Attachments
+
+    var attachmentsDirectory: URL {
+        fileURL.deletingLastPathComponent().appendingPathComponent("Attachments", isDirectory: true)
+    }
+
+    func attachmentsFolder(for propertyID: UUID) -> URL {
+        attachmentsDirectory.appendingPathComponent(propertyID.uuidString, isDirectory: true)
+    }
+
+    func fileURL(for attachment: Attachment, in propertyID: UUID) -> URL {
+        attachmentsFolder(for: propertyID).appendingPathComponent(attachment.fileName)
+    }
+
+    @discardableResult
+    func addAttachment(data: Data, name: String, fileExtension: String, kind: AttachmentKind, to propertyID: UUID) throws -> Attachment {
+        guard property(id: propertyID) != nil else { throw StoreError.propertyNotFound }
+        let folder = attachmentsFolder(for: propertyID)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let ext = fileExtension.isEmpty ? "dat" : fileExtension.lowercased()
+        let attachment = Attachment(kind: kind, fileName: "\(UUID().uuidString).\(ext)", name: name)
+        try data.write(to: folder.appendingPathComponent(attachment.fileName), options: .atomic)
+        update(propertyID) { $0.attachments.append(attachment) }
+        return attachment
+    }
+
+    /// Copies a picked file into the property's folder. Images are filed as photos.
+    @discardableResult
+    func importAttachment(from url: URL, to propertyID: UUID) throws -> Attachment {
+        let hasAccess = url.startAccessingSecurityScopedResource()
+        defer {
+            if hasAccess { url.stopAccessingSecurityScopedResource() }
+        }
+        let data = try Data(contentsOf: url)
+        let ext = url.pathExtension.lowercased()
+        let isImage = UTType(filenameExtension: ext)?.conforms(to: .image) ?? false
+        return try addAttachment(
+            data: data,
+            name: url.lastPathComponent,
+            fileExtension: ext,
+            kind: isImage ? .photo : .document,
+            to: propertyID
+        )
+    }
+
+    func removeAttachment(_ attachmentID: UUID, from propertyID: UUID) {
+        guard let attachment = property(id: propertyID)?.attachments.first(where: { $0.id == attachmentID }) else { return }
+        try? FileManager.default.removeItem(at: fileURL(for: attachment, in: propertyID))
+        update(propertyID) { property in
+            property.attachments.removeAll { $0.id == attachmentID }
+        }
     }
 
     // MARK: - Backup
@@ -92,9 +161,16 @@ final class PropertyStore: ObservableObject {
     func importBackup(from url: URL) throws -> Int {
         let data = try Data(contentsOf: url)
         let incoming = try Self.decoder.decode([Property].self, from: data)
-        for property in incoming {
+        for var property in incoming {
+            // Backups don't contain files, so only keep attachments that exist on this device.
+            let propertyID = property.id
+            property.attachments = property.attachments.filter {
+                FileManager.default.fileExists(atPath: fileURL(for: $0, in: propertyID).path)
+            }
             if let index = properties.firstIndex(where: { $0.id == property.id }) {
                 if property.dateUpdated >= properties[index].dateUpdated {
+                    let incomingIDs = Set(property.attachments.map(\.id))
+                    property.attachments += properties[index].attachments.filter { !incomingIDs.contains($0.id) }
                     properties[index] = property
                 }
             } else {
