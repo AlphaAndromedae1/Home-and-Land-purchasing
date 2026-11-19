@@ -1,0 +1,59 @@
+# XcodeGen spec. Run `xcodegen generate` to create HomeLand.xcodeproj.
+name: HomeLand
+options:
+  bundleIdPrefix: com.alphaandromedae1
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  HomeLand:
+    type: application
+    platform: iOS
+    sources:
+      - path: HomeLand
+    info:
+      path: HomeLand/Info.plist
+      properties:
+        CFBundleDisplayName: "Home & Land"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_NAME: HomeLand
+        PRODUCT_BUNDLE_IDENTIFIER: com.alphaandromedae1.homeland
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    scheme:
+      testTargets:
+        - HomeLandTests
+  HomeLandTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: HomeLandTests
+    dependencies:
+      - target: HomeLand
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.alphaandromedae1.homeland.tests
