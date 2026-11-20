@@ -148,20 +148,28 @@ struct FindView: View {
 
     private var taxSaleSection: some View {
         Section {
+            NavigationLink {
+                TaxSaleNoticesView(region: region)
+            } label: {
+                SearchRowLabel(
+                    title: "Tax sales from the Ontario Gazette",
+                    subtitle: "Every advertised tax sale, with minimum tenders and closing dates",
+                    symbol: "newspaper"
+                )
+            }
             ListingSearchLink(
                 request: request(for: .taxSales),
-                title: "Tax sale notices",
+                title: "Search the web for tax sale notices",
                 subtitle: region == .anywhere ? "Across Ontario" : "In \(region.name)",
                 symbol: "doc.text.magnifyingglass"
             )
-            SearchActionRow(title: "Ontario Gazette notices", subtitle: "Every tax sale is advertised here", symbol: "newspaper") {
-                openURL(SearchLinks.gazetteTaxSales(pastMonth: pastMonth))
-            }
             SearchActionRow(title: "OntarioTaxSales.ca", subtitle: "Central tax sale listings", symbol: "list.bullet.rectangle") {
                 openURL(Sources.ontarioTaxSales)
             }
         } header: {
             Text("Tax sales")
+        } footer: {
+            Text("Gazette notices are read directly from ontario.ca and don't need a search key.")
         }
     }
 

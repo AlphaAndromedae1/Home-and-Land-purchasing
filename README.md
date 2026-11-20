@@ -28,6 +28,14 @@ Open a property and tap **Rate this deal & work out a max offer**. Enter an esti
 
 80+ is **Excellent** (5★), 65+ **Good** (4★), 50+ **Fair** (3★), 35+ **Below average** (2★), and anything lower is **Poor** (1★). The analysis also shows the highest price that would still rate as a Good deal.
 
+### Tax sales from the Ontario Gazette
+
+Every Ontario tax sale must be advertised in the Ontario Gazette. **Find → Tax sales from the Ontario Gazette** reads the tax sale notices from the last six weekly issues directly from ontario.ca. No key is needed. For each municipality it shows the closing date, tender or auction, and every property with its minimum tender, assessed value, PIN and roll number. You can filter by Southern Ontario region. **Save to watchlist** adds a property with the minimum tender as the price, the closing date as the deadline (so reminders work) and the municipal contact. The full notice is shown exactly as published, with credit to the Ontario Gazette and a link back. ontario.ca allows non-commercial reproduction with credit and without changes. Notices are kept for six hours, and you can pull down to refresh.
+
+### Save any listing you're looking at
+
+Links open in the app's own browser. When you're looking at a listing on Realtor.ca, HouseSigma, Zolo, Kijiji or any other site, tap **Save**. The app reads that page (title, price, address, beds and baths, and any structured listing data) and opens the add-property form pre-filled, so you can check it and save it to your watchlist. It only reads the page you're on, when you tap Save. **Open in Safari** and **Share** are in the bottom toolbar.
+
 ### Listings in the app
 
 Realtor.ca and other listing sites don't offer a public data feed, and copying their pages breaks their terms of use. The app uses **Brave Search's API** instead. It finds public listing pages that Brave has indexed on Realtor.ca, HouseSigma, Zolo and Kijiji, and shows them as listing cards: photo, price, address, beds, baths or acres, and whether it looks like a power of sale, estate or receivership. Tap **Save** to add one to your watchlist with those details filled in. Tap the card to see the full listing on its site.

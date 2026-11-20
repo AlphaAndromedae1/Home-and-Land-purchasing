@@ -213,12 +213,11 @@ struct RegionDetailView: View {
                     subtitle: "From the past month",
                     symbol: "map"
                 )
-                ListingSearchLink(
-                    request: ListingSearchRequest(target: .taxSales, terms: [], region: region, pastMonth: false),
-                    title: "Tax sale notices",
-                    subtitle: "“Sale of land for tax arrears”",
-                    symbol: "doc.text.magnifyingglass"
-                )
+                NavigationLink {
+                    TaxSaleNoticesView(region: region)
+                } label: {
+                    SearchRowLabel(title: "Tax sales from the Ontario Gazette", subtitle: "Read directly from ontario.ca", symbol: "newspaper")
+                }
             } header: {
                 Text("Quick searches")
             } footer: {

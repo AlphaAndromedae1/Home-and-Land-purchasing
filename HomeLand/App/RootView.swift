@@ -43,8 +43,8 @@ struct RootView: View {
             handle(url)
         })
         .sheet(item: $browserPage) { page in
-            SafariView(url: page.url)
-                .ignoresSafeArea()
+            InAppBrowser(url: page.url)
+                .environmentObject(store)
         }
         // Keep deadline notifications in step with the watchlist.
         .onReceive(store.$properties) { properties in
