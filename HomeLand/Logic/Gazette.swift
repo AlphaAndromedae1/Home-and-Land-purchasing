@@ -141,7 +141,7 @@ enum GazetteParser {
 
     /// Links to an issue's tax sale sections ("sale-land-tax-arrears-…").
     static func taxSaleSectionURLs(fromIssueHTML html: String, baseURL: URL = GazetteClient.baseURL) -> [URL] {
-        let pattern = #"href="(?:https?://(?:www\.)?ontario\.ca)?(/document/ontario-gazette-volume-[^"/#?]+/sale-land[^"#?]*)""#
+        let pattern = ##"href="(?:https?://(?:www\.)?ontario\.ca)?(/document/ontario-gazette-volume-[^"/#?]+/sale-land[^"#?]*)""##
         var seen = Set<String>()
         return allMatches(pattern, in: html).compactMap { groups in
             guard let path = groups[1], seen.insert(path).inserted else { return nil }
