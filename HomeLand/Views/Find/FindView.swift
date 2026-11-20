@@ -3,6 +3,7 @@ import UIKit
 
 struct FindView: View {
     @EnvironmentObject private var store: PropertyStore
+    @EnvironmentObject private var searchKeys: SearchKeyStore
     @Environment(\.openURL) private var openURL
 
     @AppStorage("find.region") private var regionID = Region.gta.rawValue
@@ -94,19 +95,30 @@ struct FindView: View {
         .padding(.vertical, 4)
     }
 
+    private static let listingTargets: [ListingSearchTarget] = [.allSites, .realtor, .houseSigma, .zolo, .kijiji]
+
+    private func request(for target: ListingSearchTarget) -> ListingSearchRequest {
+        ListingSearchRequest(target: target, terms: selectedTerms, region: region, pastMonth: pastMonth)
+    }
+
     private var listingSearchSection: some View {
         Section {
-            SearchActionRow(title: "Realtor.ca listings", subtitle: "Google search of Realtor.ca listing pages", symbol: "house") {
-                openURL(SearchLinks.listings(site: "realtor.ca/real-estate", terms: selectedTerms, region: region, pastMonth: pastMonth))
+            if !searchKeys.hasKey {
+                NavigationLink {
+                    SearchKeySetupView()
+                } label: {
+                    SearchRowLabel(
+                        title: "Show listings in the app",
+                        subtitle: "Set up a Brave Search key to see prices and photos here",
+                        symbol: "wand.and.stars"
+                    )
+                }
             }
-            SearchActionRow(title: "Kijiji", subtitle: "Private sales and land ads", symbol: "tag") {
-                openURL(SearchLinks.listings(site: "kijiji.ca", terms: selectedTerms, region: region, pastMonth: pastMonth))
+            ForEach(Self.listingTargets) { target in
+                ListingSearchLink(request: request(for: target), title: target.name, subtitle: target.subtitle, symbol: target.symbol)
             }
-            SearchActionRow(title: "Zolo", subtitle: "MLS listings with sold history", symbol: "list.bullet") {
-                openURL(SearchLinks.listings(site: "zolo.ca", terms: selectedTerms, region: region, pastMonth: pastMonth))
-            }
-            SearchActionRow(title: "Whole web", subtitle: "Brokerages, receivers and news", symbol: "globe") {
-                openURL(SearchLinks.listings(site: nil, terms: selectedTerms, region: region, pastMonth: pastMonth))
+            SearchActionRow(title: "Whole web in the browser", subtitle: "Brokerages, receivers and news on Google", symbol: "globe") {
+                openURL(request(for: .web).googleFallbackURL)
             }
             SearchActionRow(
                 title: "Open Realtor.ca and copy keyword",
@@ -123,22 +135,25 @@ struct FindView: View {
         } header: {
             Text("Search listings in \(region.name)")
         } footer: {
-            Text(selectedTerms.isEmpty
-                 ? "Pick at least one keyword above."
-                 : "Google only shows pages it has indexed, so check Realtor.ca directly for the newest listings.")
+            if selectedTerms.isEmpty {
+                Text("Pick at least one keyword above.")
+            } else if searchKeys.hasKey {
+                Text("Listings show right here, with prices, photos and a Save button. Each page of results uses one search from your Brave credit.")
+            } else {
+                Text("Without a Brave key these open Google in the browser. Google only shows pages it has indexed, so check Realtor.ca directly for the newest listings.")
+            }
         }
         .disabled(selectedTerms.isEmpty)
     }
 
     private var taxSaleSection: some View {
         Section {
-            SearchActionRow(
+            ListingSearchLink(
+                request: request(for: .taxSales),
                 title: "Tax sale notices",
                 subtitle: region == .anywhere ? "Across Ontario" : "In \(region.name)",
                 symbol: "doc.text.magnifyingglass"
-            ) {
-                openURL(SearchLinks.taxSaleNotices(region: region, pastMonth: pastMonth))
-            }
+            )
             SearchActionRow(title: "Ontario Gazette notices", subtitle: "Every tax sale is advertised here", symbol: "newspaper") {
                 openURL(SearchLinks.gazetteTaxSales(pastMonth: pastMonth))
             }

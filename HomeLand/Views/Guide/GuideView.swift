@@ -195,22 +195,34 @@ struct RegionDetailView: View {
                 .padding(.vertical, 4)
             }
             Section {
-                SearchActionRow(title: "Power of sale listings", subtitle: "Realtor.ca pages from the past month", symbol: "building.columns") {
-                    openURL(SearchLinks.listings(site: "realtor.ca/real-estate", terms: ["power of sale", "bank sale", "mortgagee sale"], region: region, pastMonth: true))
-                }
-                SearchActionRow(title: "Estate sales and fixer-uppers", subtitle: "Realtor.ca pages from the past month", symbol: "hammer") {
-                    openURL(SearchLinks.listings(site: "realtor.ca/real-estate", terms: ["estate sale", "contractor special", "handyman special", "needs TLC"], region: region, pastMonth: true))
-                }
-                SearchActionRow(title: "Vacant land and lots", subtitle: "Realtor.ca pages from the past month", symbol: "map") {
-                    openURL(SearchLinks.listings(site: "realtor.ca/real-estate", terms: ["vacant land", "building lot", "acreage"], region: region, pastMonth: true))
-                }
-                SearchActionRow(title: "Tax sale notices", subtitle: "“Sale of land for tax arrears”", symbol: "doc.text.magnifyingglass") {
-                    openURL(SearchLinks.taxSaleNotices(region: region, pastMonth: false))
-                }
+                ListingSearchLink(
+                    request: ListingSearchRequest(target: .allSites, terms: ["power of sale", "bank sale", "mortgagee sale"], region: region, pastMonth: true),
+                    title: "Power of sale listings",
+                    subtitle: "From the past month",
+                    symbol: "building.columns"
+                )
+                ListingSearchLink(
+                    request: ListingSearchRequest(target: .allSites, terms: ["estate sale", "contractor special", "handyman special", "needs TLC"], region: region, pastMonth: true),
+                    title: "Estate sales and fixer-uppers",
+                    subtitle: "From the past month",
+                    symbol: "hammer"
+                )
+                ListingSearchLink(
+                    request: ListingSearchRequest(target: .allSites, terms: ["vacant land", "building lot", "acreage"], region: region, pastMonth: true),
+                    title: "Vacant land and lots",
+                    subtitle: "From the past month",
+                    symbol: "map"
+                )
+                ListingSearchLink(
+                    request: ListingSearchRequest(target: .taxSales, terms: [], region: region, pastMonth: false),
+                    title: "Tax sale notices",
+                    subtitle: "“Sale of land for tax arrears”",
+                    symbol: "doc.text.magnifyingglass"
+                )
             } header: {
                 Text("Quick searches")
             } footer: {
-                Text("Searches run through Google, so the newest listings may not show yet.")
+                Text("With a Brave Search key (Tools → Listing search) these show listings in the app. Otherwise they open Google.")
             }
         }
         .navigationTitle(region.name)

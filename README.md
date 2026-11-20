@@ -28,7 +28,19 @@ Open a property and tap **Rate this deal & work out a max offer**. Enter an esti
 
 80+ is **Excellent** (5★), 65+ **Good** (4★), 50+ **Fair** (3★), 35+ **Below average** (2★), and anything lower is **Poor** (1★). The analysis also shows the highest price that would still rate as a Good deal.
 
-Listing sites such as Realtor.ca don't offer a public data feed, so the app doesn't copy listings. It opens the sites in an in-app browser and runs searches for you.
+### Listings in the app
+
+Realtor.ca and other listing sites don't offer a public data feed, and copying their pages breaks their terms of use. The app uses **Brave Search's API** instead. It finds public listing pages that Brave has indexed on Realtor.ca, HouseSigma, Zolo and Kijiji, and shows them as listing cards: photo, price, address, beds, baths or acres, and whether it looks like a power of sale, estate or receivership. Tap **Save** to add one to your watchlist with those details filled in. Tap the card to see the full listing on its site.
+
+To turn it on:
+
+1. Open the [Brave Search API dashboard](https://api-dashboard.search.brave.com/), create an account and subscribe to the **Search** plan. Brave includes $5 of free credit a month (about 1,000 searches) and may ask for a card.
+2. Create an API key and copy it.
+3. In the app, go to **Tools → Listing search**, paste the key and tap **Save key**.
+
+Each page of up to 20 results is one search. Repeating a search within 30 minutes reuses the saved results. The key is stored in the iPhone's Keychain and only sent to Brave. Without a key, the searches open Google in the in-app browser instead.
+
+Results only include pages Brave has indexed, so brand-new listings can be missing. A licensed MLS® feed would give complete, real-time listings, but that needs a REALTOR® to sign up for CREA's data feed (DDF®) and a server to sync it.
 
 ## Get the app (.ipa)
 

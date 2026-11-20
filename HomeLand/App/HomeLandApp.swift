@@ -5,11 +5,13 @@ import UserNotifications
 struct HomeLandApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = PropertyStore()
+    @StateObject private var searchKeys = SearchKeyStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)
+                .environmentObject(searchKeys)
         }
     }
 }

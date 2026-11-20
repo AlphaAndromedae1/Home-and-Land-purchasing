@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ToolsView: View {
+    @EnvironmentObject private var searchKeys: SearchKeyStore
     @AppStorage(SettingsKeys.openLinksInSafari) private var openLinksInSafari = false
     @AppStorage(SettingsKeys.remindersEnabled) private var remindersEnabled = true
 
@@ -37,6 +38,16 @@ struct ToolsView: View {
                     }
                 }
                 Section {
+                    NavigationLink {
+                        SearchKeySetupView()
+                    } label: {
+                        HStack {
+                            Label("Listing search", systemImage: "magnifyingglass")
+                            Spacer()
+                            Text(searchKeys.hasKey ? "On" : "Set up")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     Toggle("Deadline reminders", isOn: $remindersEnabled)
                     Toggle("Open links in the Safari app", isOn: $openLinksInSafari)
                 } header: {
@@ -46,7 +57,7 @@ struct ToolsView: View {
                 }
                 Section {
                     InfoRow(label: "Version", value: Bundle.main.appVersion)
-                    Text("Listings come from public websites. This app doesn't copy or store listing data; it opens the sites and searches for you.")
+                    Text("Listings come from public websites through Brave Search, or Google when no key is set. Tap a listing to see full details on its site.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     Text("If you installed with a free Apple ID, the app needs to be refreshed every 7 days. Export a backup from the Watchlist menu now and then.")

@@ -36,10 +36,6 @@ enum SearchLinks {
         google(query(site: site, terms: terms, places: region.places), pastMonth: pastMonth)
     }
 
-    static func taxSaleNotices(region: Region, pastMonth: Bool) -> URL {
-        google(query(terms: ["sale of land for tax arrears"], places: region.places), pastMonth: pastMonth)
-    }
-
     static func gazetteTaxSales(pastMonth: Bool) -> URL {
         google(query(site: "ontario.ca/document", terms: ["Sale of Land for Tax Arrears"]), pastMonth: pastMonth)
     }
